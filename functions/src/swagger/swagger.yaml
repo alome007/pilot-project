@@ -1,0 +1,227 @@
+openapi: 3.0.0
+info:
+  title: MailGuard API
+  version: 1.0.0
+  description: API documentation for MailGuard email forwarding service
+
+servers:
+  - url: https://us-central1-{projectId}.cloudfunctions.net
+    variables:
+      projectId:
+        default: your-project-id
+        description: Firebase project ID
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        threadId:
+          type: string
+        content:
+          type: string
+        senderId:
+          type: string
+        sentAt:
+          type: string
+          format: date-time
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        read:
+          type: boolean
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        size:
+          type: number
+        url:
+          type: string
+
+    MessageThread:
+      type: object
+      properties:
+        id:
+          type: string
+        aliasId:
+          type: string
+        subject:
+          type: string
+        participants:
+          type: array
+          items:
+            type: string
+        lastMessageAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/getUserInboxes:
+    post:
+      summary: Get user's message inboxes
+      operationId: getUserInboxes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                aliasId:
+                  type: string
+                  description: Optional alias ID to filter messages
+      responses:
+        '200':
+          description: List of message threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MessageThread'
+
+  /api/getMessageThread:
+    post:
+      summary: Get a specific message thread
+      operationId: getMessageThread
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                threadId:
+                  type: string
+                  description: ID of the message thread
+      responses:
+        '200':
+          description: Message thread details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageThread'
+
+  /api/sendReply:
+    post:
+      summary: Send a reply in a message thread
+      operationId: sendReply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                threadId:
+                  type: string
+                content:
+                  type: string
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Attachment'
+      responses:
+        '200':
+          description: Reply sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+
+  /api/markAsRead:
+    post:
+      summary: Mark messages as read
+      operationId: markAsRead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Messages marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/archiveMessage:
+    post:
+      summary: Archive a message
+      operationId: archiveMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageId:
+                  type: string
+      responses:
+        '200':
+          description: Message archived successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/deleteMessage:
+    post:
+      summary: Delete a message
+      operationId: deleteMessage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                messageId:
+                  type: string
+      responses:
+        '200':
+          description: Message deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
