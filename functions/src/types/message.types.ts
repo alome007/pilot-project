@@ -18,12 +18,21 @@ export interface Message {
   archivedAt?: FirebaseFirestore.Timestamp;
 }
 
+
 export interface MessageThread {
-  id: string;
-  aliasId: string;
+  id?: string;
+  alias: string;
+  sender: string;
   subject: string;
-  participants: string[];
-  lastMessageAt: FirebaseFirestore.Timestamp;
-  createdAt: FirebaseFirestore.Timestamp;
-  labels?: string[];
+  preview: string;
+  time: string;
+  isStarred: boolean;
+  isRead: boolean;
+  hasAttachment: boolean;
+  canReply: boolean;
+  messages: Array<{
+    content: string;
+    timestamp: string;
+    fromMe: boolean;
+  }>;
 }

@@ -24,11 +24,6 @@ const mockEmails = [
         content: "Your order #12345 has been shipped! Track your package with tracking number: ABC123XYZ",
         timestamp: "10:30 AM",
         fromMe: false
-      },
-      {
-        content: "Thanks for the update! When can I expect the delivery?",
-        timestamp: "10:35 AM",
-        fromMe: true
       }
     ]
   },

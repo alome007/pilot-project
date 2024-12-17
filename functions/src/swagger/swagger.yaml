@@ -2,14 +2,10 @@ openapi: 3.0.0
 info:
   title: MailGuard API
   version: 1.0.0
-  description: API documentation for MailGuard email forwarding service
-
-servers:
-  - url: https://us-central1-{projectId}.cloudfunctions.net
-    variables:
-      projectId:
-        default: your-project-id
-        description: Firebase project ID
+  description: |
+    API documentation for MailGuard email forwarding service.
+    
+    All API endpoints require authentication using a Firebase Auth token.
 
 components:
   securitySchemes:
@@ -17,6 +13,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Firebase Auth Token
 
   schemas:
     Message:

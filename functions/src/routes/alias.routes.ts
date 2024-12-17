@@ -1,16 +1,26 @@
-import * as functions from 'firebase-functions';
+import express from 'express';
 import { createAlias, getUserInbox } from '../controllers/alias.controller';
-import { validateAuth } from '../middleware/auth';
 
-export const aliasRoutes = {
-  createAlias: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { alias, destination } = data;
-    return createAlias(context.auth!.uid, alias, destination);
-  }),
+const router = express.Router();
 
-  getUserInbox: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    return getUserInbox(context.auth!.uid);
-  })
-};
+router.post('/create', async (req, res) => {
+  try {
+    const { alias, destination } = req.body;
+    const result = await createAlias(req.user!.uid, alias, destination);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create alias' });
+  }
+});
+
+router.get('/inbox', async (req, res) => {
+  try {
+    const inbox = await getUserInbox(req.user!.uid);
+    res.json(inbox);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Failed to fetch inbox' });
+  }
+});
+
+export const aliasRoutes = router;

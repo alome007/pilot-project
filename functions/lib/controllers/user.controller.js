@@ -33,10 +33,40 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.createUser = createUser;
 exports.getUserInfo = getUserInfo;
 exports.getDashboardStats = getDashboardStats;
 const admin = __importStar(require("firebase-admin"));
-const https_1 = require("firebase-functions/v2/https");
+const emailtemplates_service_1 = require("../services/emailtemplates.service");
+const alias_controller_1 = require("./alias.controller");
+const message_controller_1 = require("./message.controller");
+const { Firestore } = require("firebase-admin/firestore");
+async function createUser(userId, email, name) {
+    try {
+        const userData = {
+            email,
+            name,
+            planId: 'free',
+            planName: 'Free',
+            createdAt: Firestore.FieldValue.serverTimestamp(),
+            features: ['Basic Alias Management', 'Email Forwarding']
+        };
+        const alias = (0, alias_controller_1.generateRandomAlias)();
+        await Promise.all([
+            admin.firestore()
+                .collection('users')
+                .doc(userId)
+                .set(userData),
+            (0, emailtemplates_service_1.sendWelcomeEmail)(email, name),
+            (0, message_controller_1.createWelcomeThread)(alias),
+            (0, alias_controller_1.createAlias)(userId, alias, email)
+        ]);
+        return userData;
+    }
+    catch (error) {
+        throw error;
+    }
+}
 async function getUserInfo(userId) {
     try {
         const userDoc = await admin.firestore()
@@ -44,12 +74,12 @@ async function getUserInfo(userId) {
             .doc(userId)
             .get();
         if (!userDoc.exists) {
-            throw new https_1.HttpsError('not-found', 'User not found');
+            throw new Error('User not found');
         }
         return userDoc.data();
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error fetching user info');
+        throw error;
     }
 }
 async function getDashboardStats(userId) {
@@ -67,6 +97,6 @@ async function getDashboardStats(userId) {
         };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error fetching dashboard stats');
+        throw error;
     }
 }

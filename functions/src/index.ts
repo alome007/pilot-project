@@ -1,18 +1,17 @@
-import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
-import { userRoutes } from './routes/user.routes';
-import { aliasRoutes } from './routes/alias.routes';
-import { billingRoutes } from './routes/billing.routes';
-import { messageRoutes } from './routes/message.routes';
-import { swagger } from './swagger';
-
 admin.initializeApp();
+import * as functions from 'firebase-functions';
+import express from 'express';
+import { apiRoutes } from './routes/api.routes';
+import { webhook } from './routes/webhook.routes';
+import { swagger } from './swagger';
+import { onUserCreated } from './auth/user.auth';
 
-export const api = {
-  ...userRoutes,
-  ...aliasRoutes,
-  ...billingRoutes,
-  ...messageRoutes
-};
 
-export { swagger };
+const app = express();
+app.use(express.json());
+app.use('/api', apiRoutes);
+
+export const api = functions.https.onRequest(app);
+
+export { swagger, webhook, onUserCreated };

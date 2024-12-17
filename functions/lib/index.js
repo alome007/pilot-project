@@ -32,19 +32,23 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.swagger = exports.api = void 0;
+exports.onUserCreated = exports.webhook = exports.swagger = exports.api = void 0;
 const admin = __importStar(require("firebase-admin"));
-const user_routes_1 = require("./routes/user.routes");
-const alias_routes_1 = require("./routes/alias.routes");
-const billing_routes_1 = require("./routes/billing.routes");
-const message_routes_1 = require("./routes/message.routes");
+admin.initializeApp();
+const functions = __importStar(require("firebase-functions"));
+const express_1 = __importDefault(require("express"));
+const api_routes_1 = require("./routes/api.routes");
+const webhook_routes_1 = require("./routes/webhook.routes");
+Object.defineProperty(exports, "webhook", { enumerable: true, get: function () { return webhook_routes_1.webhook; } });
 const swagger_1 = require("./swagger");
 Object.defineProperty(exports, "swagger", { enumerable: true, get: function () { return swagger_1.swagger; } });
-admin.initializeApp();
-exports.api = {
-    ...user_routes_1.userRoutes,
-    ...alias_routes_1.aliasRoutes,
-    ...billing_routes_1.billingRoutes,
-    ...message_routes_1.messageRoutes
-};
+const user_auth_1 = require("./auth/user.auth");
+Object.defineProperty(exports, "onUserCreated", { enumerable: true, get: function () { return user_auth_1.onUserCreated; } });
+const app = (0, express_1.default)();
+app.use(express_1.default.json());
+app.use('/api', api_routes_1.apiRoutes);
+exports.api = functions.https.onRequest(app);

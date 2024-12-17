@@ -35,9 +35,10 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createAlias = createAlias;
 exports.getUserInbox = getUserInbox;
+exports.generateRandomAlias = generateRandomAlias;
 const admin = __importStar(require("firebase-admin"));
-const https_1 = require("firebase-functions/v2/https");
 const uuid_1 = require("uuid");
+const { Firestore } = require("firebase-admin/firestore");
 async function createAlias(userId, alias, destination) {
     try {
         // Check if alias is available
@@ -46,14 +47,14 @@ async function createAlias(userId, alias, destination) {
             .where('alias', '==', alias)
             .get();
         if (!existingAlias.empty) {
-            throw new https_1.HttpsError('already-exists', 'Alias already taken');
+            throw new Error('Alias already taken');
         }
         const aliasData = {
             id: (0, uuid_1.v4)(),
             userId,
             alias,
             destination,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: Firestore.FieldValue.serverTimestamp(),
             active: true
         };
         await admin.firestore()
@@ -63,7 +64,7 @@ async function createAlias(userId, alias, destination) {
         return aliasData;
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error creating alias');
+        throw error;
     }
 }
 async function getUserInbox(userId) {
@@ -80,6 +81,32 @@ async function getUserInbox(userId) {
         }));
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error fetching inbox');
+        throw error;
     }
+}
+/**
+ * Generates a random alias with @thesnocks.us domain
+ * @param prefix Optional prefix for the alias
+ * @returns A randomly generated email alias
+ */
+function generateRandomAlias(prefix) {
+    // Array of random adjectives and nouns to create interesting aliases
+    const adjectives = [
+        'clever', 'quick', 'silly', 'smart', 'brave', 'cool',
+        'wild', 'funky', 'smooth', 'zen', 'epic', 'ninja'
+    ];
+    const nouns = [
+        'fox', 'wolf', 'eagle', 'shark', 'tiger', 'hawk',
+        'lion', 'bear', 'dragon', 'phoenix', 'cobra', 'raven'
+    ];
+    // Generate a random string
+    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+    const randomNumber = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    // Combine parts
+    const alias = prefix
+        ? `${prefix}_${randomAdjective}_${randomNoun}_${randomNumber}`
+        : `${randomAdjective}_${randomNoun}_${randomNumber}`;
+    // Append domain
+    return `${alias.toLowerCase()}@thesnocks.us`;
 }

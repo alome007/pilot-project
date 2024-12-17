@@ -1,15 +1,24 @@
-import * as functions from 'firebase-functions';
+import express from 'express';
 import { getUserInfo, getDashboardStats } from '../controllers/user.controller';
-import { validateAuth } from '../middleware/auth';
 
-export const userRoutes = {
-  getUserInfo: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    return getUserInfo(context.auth!.uid);
-  }),
+const router = express.Router();
 
-  getDashboardStats: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    return getDashboardStats(context.auth!.uid);
-  })
-};
+router.get('/info', async (req, res) => {
+  try {
+    const userInfo = await getUserInfo(req.user!.uid);
+    res.json(userInfo);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user info' });
+  }
+});
+
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = await getDashboardStats(req.user!.uid);
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  }
+});
+
+export const userRoutes = router;

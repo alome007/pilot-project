@@ -32,14 +32,17 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getBillingHistory = getBillingHistory;
 exports.getUserPlan = getUserPlan;
 exports.upgradePlan = upgradePlan;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
-const lemonsqueezy_ts_1 = require("lemonsqueezy.ts");
-const lemonSqueezy = new lemonsqueezy_ts_1.LemonSqueezy(process.env.LEMON_SQUEEZY_API_KEY);
+const lemonsqueezy_js_1 = __importDefault(require("@lemonsqueezy/lemonsqueezy.js"));
+const lemonSqueezy = new lemonsqueezy_js_1.default(process.env.LEMON_SQUEEZY_API_KEY);
 async function getBillingHistory(userId) {
     try {
         const invoicesSnapshot = await admin.firestore()
@@ -63,7 +66,7 @@ async function getUserPlan(userId) {
             .doc(userId)
             .get();
         if (!userDoc.exists) {
-            throw new https_1.HttpsError('not-found', 'User not found');
+            throw new Error('User not found');
         }
         const userData = userDoc.data();
         return {
@@ -75,27 +78,28 @@ async function getUserPlan(userId) {
         };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error fetching user plan');
+        throw error;
     }
 }
 async function upgradePlan(userId, planId) {
     try {
         // Create checkout session with LemonSqueezy
-        const checkout = await lemonSqueezy.createCheckout({
-            storeId: process.env.LEMON_SQUEEZY_STORE_ID,
-            variantId: planId,
-            customData: {
-                userId
-            },
-            checkoutData: {
-                email: (await admin.auth().getUser(userId)).email
-            }
-        });
+        // const checkoutOptions: CheckoutOptions = {
+        //   storeId: parseInt(process.env.LEMON_SQUEEZY_STORE_ID!, 10),
+        //   variantId: parseInt(planId, 10),
+        //   checkoutOptions: {
+        //     customData: {
+        //       userId
+        //     },
+        //     email: (await admin.auth().getUser(userId)).email || ''
+        //   },
+        // };
+        // const checkout = await lemonSqueezy.createCheckout(checkoutOptions);
         return {
-            checkoutUrl: checkout.data.attributes.url
+            checkoutUrl: "checkout.data.attributes.url"
         };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error creating checkout session');
+        throw error;
     }
 }

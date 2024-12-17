@@ -1,48 +1,73 @@
-import * as functions from 'firebase-functions';
-import { validateAuth } from '../middleware/auth';
-import { 
-  getUserInboxes, 
-  getMessageThread, 
+import express from 'express';
+import {
+  getUserInboxes,
+  getMessageThread,
   sendReply,
   markAsRead,
   archiveMessage,
   deleteMessage
 } from '../controllers/message.controller';
 
-export const messageRoutes = {
-  getUserInboxes: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { aliasId } = data;
-    return getUserInboxes(context.auth!.uid, aliasId);
-  }),
+const router = express.Router();
 
-  getMessageThread: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { threadId } = data;
-    return getMessageThread(context.auth!.uid, threadId);
-  }),
+router.get('/inboxes', async (req, res) => {
+  try {
+    const { aliasId } = req.query;
+    const inboxes = await getUserInboxes(req.user!.uid, aliasId as string);
+    res.json(inboxes);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch inboxes' });
+  }
+});
 
-  sendReply: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { threadId, content, attachments } = data;
-    return sendReply(context.auth!.uid, threadId, content, attachments);
-  }),
+router.get('/thread/:threadId', async (req, res) => {
+  try {
+    const { threadId } = req.params;
+    const thread = await getMessageThread(req.user!.uid, threadId);
+    res.json(thread);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch message thread' });
+  }
+});
 
-  markAsRead: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { messageIds } = data;
-    return markAsRead(context.auth!.uid, messageIds);
-  }),
+router.post('/reply', async (req, res) => {
+  try {
+    const { threadId, content, attachments } = req.body;
+    const reply = await sendReply(req.user!.uid, threadId, content, attachments);
+    res.json(reply);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to send reply' });
+  }
+});
 
-  archiveMessage: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { messageId } = data;
-    return archiveMessage(context.auth!.uid, messageId);
-  }),
+router.post('/mark-read', async (req, res) => {
+  try {
+    const { messageIds } = req.body;
+    const result = await markAsRead(req.user!.uid, messageIds);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to mark messages as read' });
+  }
+});
 
-  deleteMessage: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { messageId } = data;
-    return deleteMessage(context.auth!.uid, messageId);
-  })
-};
+router.post('/archive/:messageId', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const result = await archiveMessage(req.user!.uid, messageId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to archive message' });
+  }
+});
+
+router.delete('/:messageId', async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const result = await deleteMessage(req.user!.uid, messageId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete message' });
+  }
+});
+
+export const messageRoutes = router;

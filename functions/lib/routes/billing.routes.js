@@ -1,54 +1,38 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.billingRoutes = void 0;
-const functions = __importStar(require("firebase-functions"));
+const express_1 = __importDefault(require("express"));
 const billing_controller_1 = require("../controllers/billing.controller");
-const auth_1 = require("../middleware/auth");
-exports.billingRoutes = {
-    getBillingHistory: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        return (0, billing_controller_1.getBillingHistory)(context.auth.uid);
-    }),
-    getUserPlan: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        return (0, billing_controller_1.getUserPlan)(context.auth.uid);
-    }),
-    upgradePlan: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { planId } = data;
-        return (0, billing_controller_1.upgradePlan)(context.auth.uid, planId);
-    })
-};
+const router = express_1.default.Router();
+router.get('/history', async (req, res) => {
+    try {
+        const history = await (0, billing_controller_1.getBillingHistory)(req.user.uid);
+        res.json(history);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch billing history' });
+    }
+});
+router.get('/plan', async (req, res) => {
+    try {
+        const plan = await (0, billing_controller_1.getUserPlan)(req.user.uid);
+        res.json(plan);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch user plan' });
+    }
+});
+router.post('/upgrade', async (req, res) => {
+    try {
+        const { planId } = req.body;
+        const result = await (0, billing_controller_1.upgradePlan)(req.user.uid, planId);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to upgrade plan' });
+    }
+});
+exports.billingRoutes = router;

@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2022", // Set your desired JavaScript version
-    "module": "commonjs", // Use CommonJS for Node.js
-    "outDir": "./lib", // Output compiled files to the 'lib' directory
-    "rootDir": "./src", // Source files directory
-    "strict": true, // Enable strict type-checking options
-    "esModuleInterop": true, // Allow importing CommonJS modules
+    "target": "es2022",
+    "module": "commonjs",
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "outDir": "./lib",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true // Skip type checking of declaration files
+    "skipLibCheck": true
   },
-  "include": ["src/**/*"], // Specify source files
-  "exclude": ["node_modules", "lib"] // Exclude unnecessary directories
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib"]
 }

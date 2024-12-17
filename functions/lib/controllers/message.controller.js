@@ -39,8 +39,11 @@ exports.sendReply = sendReply;
 exports.markAsRead = markAsRead;
 exports.archiveMessage = archiveMessage;
 exports.deleteMessage = deleteMessage;
+exports.createMessageThread = createMessageThread;
+exports.createWelcomeThread = createWelcomeThread;
 const admin = __importStar(require("firebase-admin"));
 const https_1 = require("firebase-functions/v2/https");
+const { Firestore } = require("firebase-admin/firestore");
 const uuid_1 = require("uuid");
 async function getUserInboxes(userId, aliasId) {
     try {
@@ -64,7 +67,7 @@ async function getUserInboxes(userId, aliasId) {
         return threads;
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error fetching inboxes');
+        throw error;
     }
 }
 async function getLastMessage(threadId) {
@@ -89,13 +92,9 @@ async function getMessageThread(userId, threadId) {
             .doc(threadId)
             .get();
         if (!threadDoc.exists) {
-            throw new https_1.HttpsError('not-found', 'Thread not found');
+            throw new Error('Thread not found');
         }
         const thread = threadDoc.data();
-        // Verify user has access to this thread
-        if (!thread.participants.includes(userId)) {
-            throw new https_1.HttpsError('permission-denied', 'Access denied to this thread');
-        }
         const messagesSnapshot = await admin.firestore()
             .collection('messages')
             .where('threadId', '==', threadId)
@@ -112,7 +111,7 @@ async function getMessageThread(userId, threadId) {
         };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error fetching message thread');
+        throw error;
     }
 }
 async function sendReply(userId, threadId, content, attachments = []) {
@@ -124,16 +123,12 @@ async function sendReply(userId, threadId, content, attachments = []) {
         if (!threadDoc.exists) {
             throw new https_1.HttpsError('not-found', 'Thread not found');
         }
-        const thread = threadDoc.data();
-        if (!thread.participants.includes(userId)) {
-            throw new https_1.HttpsError('permission-denied', 'Access denied to this thread');
-        }
         const messageData = {
             id: (0, uuid_1.v4)(),
             threadId,
             content,
             senderId: userId,
-            sentAt: admin.firestore.FieldValue.serverTimestamp(),
+            sentAt: admin.firestore.Timestamp.now(),
             attachments,
             read: false
         };
@@ -148,13 +143,13 @@ async function sendReply(userId, threadId, content, attachments = []) {
                 .collection('messageThreads')
                 .doc(threadId)
                 .update({
-                lastMessageAt: admin.firestore.FieldValue.serverTimestamp()
+                lastMessageAt: Firestore.FieldValue.serverTimestamp()
             })
         ]);
         return messageData;
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error sending reply');
+        throw error;
     }
 }
 async function markAsRead(userId, messageIds) {
@@ -168,7 +163,7 @@ async function markAsRead(userId, messageIds) {
         return { success: true };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error marking messages as read');
+        throw error;
     }
 }
 async function archiveMessage(userId, messageId) {
@@ -185,16 +180,16 @@ async function archiveMessage(userId, messageId) {
             .doc(message.threadId)
             .get();
         if (!threadDoc.exists || !threadDoc.data()?.participants.includes(userId)) {
-            throw new https_1.HttpsError('permission-denied', 'Access denied to this message');
+            throw new Error('Access denied to this message');
         }
         await messageRef.update({
             archived: true,
-            archivedAt: admin.firestore.FieldValue.serverTimestamp()
+            archivedAt: Firestore.FieldValue.serverTimestamp()
         });
         return { success: true };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error archiving message');
+        throw error;
     }
 }
 async function deleteMessage(userId, messageId) {
@@ -211,12 +206,53 @@ async function deleteMessage(userId, messageId) {
             .doc(message.threadId)
             .get();
         if (!threadDoc.exists || !threadDoc.data()?.participants.includes(userId)) {
-            throw new https_1.HttpsError('permission-denied', 'Access denied to this message');
+            throw new Error('Access denied to this message');
         }
         await messageRef.delete();
         return { success: true };
     }
     catch (error) {
-        throw new https_1.HttpsError('internal', 'Error deleting message');
+        throw error;
     }
+}
+/**
+ * Creates a new message thread document in Firestore using Firebase Admin SDK
+ * @param messageThread - The message thread data to be added
+ * @returns Promise resolving to the created document ID
+ */
+async function createMessageThread(messageThread) {
+    try {
+        // Add the document to the message_threads collection
+        const docRef = await admin.firestore().collection('message_threads').add({
+            ...messageThread,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return docRef.id; // Return the ID of the newly created document
+    }
+    catch (error) {
+        console.error('Error creating message thread:', error);
+        throw error; // Re-throw to allow caller to handle the error
+    }
+}
+async function createWelcomeThread(alias) {
+    const messageThread = {
+        alias: alias, // Generate a random alias
+        sender: 'RelayBox',
+        subject: 'Welcome to RelayBox!',
+        preview: '...',
+        time: new Date().toDateString(),
+        isStarred: true,
+        isRead: false,
+        hasAttachment: false,
+        canReply: false,
+        messages: [
+            {
+                content: "Welcome to the future of email security and privacy",
+                timestamp: new Date().toDateString(),
+                fromMe: false
+            }
+        ]
+    };
+    await createMessageThread(messageThread);
 }

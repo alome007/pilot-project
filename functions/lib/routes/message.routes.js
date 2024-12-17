@@ -1,71 +1,70 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.messageRoutes = void 0;
-const functions = __importStar(require("firebase-functions"));
-const auth_1 = require("../middleware/auth");
+const express_1 = __importDefault(require("express"));
 const message_controller_1 = require("../controllers/message.controller");
-exports.messageRoutes = {
-    getUserInboxes: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { aliasId } = data;
-        return (0, message_controller_1.getUserInboxes)(context.auth.uid, aliasId);
-    }),
-    getMessageThread: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { threadId } = data;
-        return (0, message_controller_1.getMessageThread)(context.auth.uid, threadId);
-    }),
-    sendReply: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { threadId, content, attachments } = data;
-        return (0, message_controller_1.sendReply)(context.auth.uid, threadId, content, attachments);
-    }),
-    markAsRead: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { messageIds } = data;
-        return (0, message_controller_1.markAsRead)(context.auth.uid, messageIds);
-    }),
-    archiveMessage: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { messageId } = data;
-        return (0, message_controller_1.archiveMessage)(context.auth.uid, messageId);
-    }),
-    deleteMessage: functions.https.onCall(async (data, context) => {
-        (0, auth_1.validateAuth)(context);
-        const { messageId } = data;
-        return (0, message_controller_1.deleteMessage)(context.auth.uid, messageId);
-    })
-};
+const router = express_1.default.Router();
+router.get('/inboxes', async (req, res) => {
+    try {
+        const { aliasId } = req.query;
+        const inboxes = await (0, message_controller_1.getUserInboxes)(req.user.uid, aliasId);
+        res.json(inboxes);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch inboxes' });
+    }
+});
+router.get('/thread/:threadId', async (req, res) => {
+    try {
+        const { threadId } = req.params;
+        const thread = await (0, message_controller_1.getMessageThread)(req.user.uid, threadId);
+        res.json(thread);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch message thread' });
+    }
+});
+router.post('/reply', async (req, res) => {
+    try {
+        const { threadId, content, attachments } = req.body;
+        const reply = await (0, message_controller_1.sendReply)(req.user.uid, threadId, content, attachments);
+        res.json(reply);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to send reply' });
+    }
+});
+router.post('/mark-read', async (req, res) => {
+    try {
+        const { messageIds } = req.body;
+        const result = await (0, message_controller_1.markAsRead)(req.user.uid, messageIds);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to mark messages as read' });
+    }
+});
+router.post('/archive/:messageId', async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const result = await (0, message_controller_1.archiveMessage)(req.user.uid, messageId);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to archive message' });
+    }
+});
+router.delete('/:messageId', async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const result = await (0, message_controller_1.deleteMessage)(req.user.uid, messageId);
+        res.json(result);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to delete message' });
+    }
+});
+exports.messageRoutes = router;

@@ -32,21 +32,33 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.swagger = void 0;
 const functions = __importStar(require("firebase-functions"));
-const express = __importStar(require("express"));
+const express_1 = __importDefault(require("express"));
 const swaggerUi = __importStar(require("swagger-ui-express"));
 const yaml_1 = require("yaml");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
-const app = express();
+const app = (0, express_1.default)();
+const basePath = '/pilot-87003/us-central1/swagger';
 // Read and parse the OpenAPI/Swagger document
 const swaggerDocument = (0, yaml_1.parse)(fs.readFileSync(path.join(__dirname, 'swagger.yaml'), 'utf8'));
-// Serve Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Update servers configuration to include the correct base path
+swaggerDocument.servers = [{
+        url: basePath,
+        description: 'Firebase Functions endpoints'
+    }];
+// Serve Swagger UI directly with the document
+app.use(`${basePath}/api-docs`, swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    explorer: true,
+    customCss: '.swagger-ui .topbar { display: none }'
+}));
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get(`${basePath}/health`, (req, res) => {
     res.json({ status: 'ok' });
 });
 exports.swagger = functions.https.onRequest(app);

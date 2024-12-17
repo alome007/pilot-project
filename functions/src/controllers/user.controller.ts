@@ -1,7 +1,38 @@
 import * as admin from 'firebase-admin';
-import { HttpsError } from 'firebase-functions/v2/https';
+import { sendWelcomeEmail } from '../services/emailtemplates.service';
+import { createAlias, generateRandomAlias } from './alias.controller';
+import { createWelcomeThread } from './message.controller';
+const { Firestore } = require("firebase-admin/firestore");
 
-export async function getUserInfo(userId: string) {
+export async function createUser (userId: string, email: string, name: string) {
+  try {
+    const userData = {
+      email,
+      name,
+      planId: 'free',
+      planName: 'Free',
+      createdAt: Firestore.FieldValue.serverTimestamp(),
+      features: ['Basic Alias Management', 'Email Forwarding']
+    };
+
+    const alias = generateRandomAlias()
+    await Promise.all([
+      admin.firestore()
+        .collection('users')
+        .doc(userId)
+        .set(userData),
+      sendWelcomeEmail(email, name),
+      createWelcomeThread(alias),
+      createAlias(userId, alias, email)
+    ]);
+
+    return userData;
+  } catch (error) {
+    throw error
+  }
+}
+
+export async function getUserInfo (userId: string) {
   try {
     const userDoc = await admin.firestore()
       .collection('users')
@@ -9,16 +40,16 @@ export async function getUserInfo(userId: string) {
       .get();
 
     if (!userDoc.exists) {
-      throw new HttpsError('not-found', 'User not found');
+      throw new Error('User not found');
     }
 
     return userDoc.data();
   } catch (error) {
-    throw new HttpsError('internal', 'Error fetching user info');
+    throw error;
   }
 }
 
-export async function getDashboardStats(userId: string) {
+export async function getDashboardStats (userId: string) {
   try {
     const [aliasCount, inboxCount, blockedCount] = await Promise.all([
       admin.firestore().collection('aliases').where('userId', '==', userId).count().get(),
@@ -33,6 +64,6 @@ export async function getDashboardStats(userId: string) {
       lastUpdated: new Date().toISOString()
     };
   } catch (error) {
-    throw new HttpsError('internal', 'Error fetching dashboard stats');
+    throw error;
   }
 }

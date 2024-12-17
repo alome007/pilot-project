@@ -1,21 +1,34 @@
-import * as functions from 'firebase-functions';
+import express from 'express';
 import { getBillingHistory, getUserPlan, upgradePlan } from '../controllers/billing.controller';
-import { validateAuth } from '../middleware/auth';
 
-export const billingRoutes = {
-  getBillingHistory: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    return getBillingHistory(context.auth!.uid);
-  }),
+const router = express.Router();
 
-  getUserPlan: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    return getUserPlan(context.auth!.uid);
-  }),
+router.get('/history', async (req, res) => {
+  try {
+    const history = await getBillingHistory(req.user!.uid);
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch billing history' });
+  }
+});
 
-  upgradePlan: functions.https.onCall(async (data, context) => {
-    validateAuth(context);
-    const { planId } = data;
-    return upgradePlan(context.auth!.uid, planId);
-  })
-};
+router.get('/plan', async (req, res) => {
+  try {
+    const plan = await getUserPlan(req.user!.uid);
+    res.json(plan);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user plan' });
+  }
+});
+
+router.post('/upgrade', async (req, res) => {
+  try {
+    const { planId } = req.body;
+    const result = await upgradePlan(req.user!.uid, planId);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to upgrade plan' });
+  }
+});
+
+export const billingRoutes = router;
