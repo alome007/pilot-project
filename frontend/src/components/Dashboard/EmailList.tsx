@@ -112,8 +112,7 @@ const archivedEmails = [
 ];
 
 export default function EmailList({ view }: EmailListProps) {
-  const [selectedEmail, setSelectedEmail] = React.useState<typeof mockEmails[0] | null>( mockEmails[0]);
-
+  const [selectedEmail, setSelectedEmail] = React.useState<typeof mockEmails[0] | null>(null);
   const getEmails = () => {
     switch (view) {
       case 'spam':
@@ -210,6 +209,20 @@ export default function EmailList({ view }: EmailListProps) {
             className="lg:static lg:flex-1"
           />
         )}
+
+        {!selectedEmail && (<div className="hidden lg:flex lg:w-2/3 flex-col items-center justify-center p-8 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
+            <div className="w-48 h-48 mb-6 text-gray-300 dark:text-gray-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-medium text-gray-900 dark:text-white mb-3">No conversation selected</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-center">
+              Select an email from the list to view the conversation
+            </p>
+          </div>)}
+
+        
     </div>
   );
 }

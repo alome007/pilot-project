@@ -12,7 +12,7 @@ interface BlockedSender {
   blockedAt: string;
 }
 
-export function useAliases() {
+export function useAliases () {
   const [aliases, setAliases] = useState<Alias[]>([]);
   const [blockedSenders, setBlockedSenders] = useState<BlockedSender[]>([]);
 
@@ -59,4 +59,30 @@ export function useAliases() {
     blockSender,
     unblockSender
   };
+}
+
+export function generateRandomAlias (prefix?: string): string {
+  // Array of random adjectives and nouns to create interesting aliases
+  const adjectives = [
+    'clever', 'quick', 'silly', 'smart', 'brave', 'cool',
+    'wild', 'funky', 'smooth', 'zen', 'epic', 'ninja'
+  ];
+
+  const nouns = [
+    'fox', 'wolf', 'eagle', 'shark', 'tiger', 'hawk',
+    'lion', 'bear', 'dragon', 'phoenix', 'cobra', 'raven'
+  ];
+
+  // Generate a random string
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomNumber = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+
+  // Combine parts
+  const alias = prefix
+    ? `${prefix}_${randomAdjective}_${randomNoun}_${randomNumber}`
+    : `${randomAdjective}_${randomNoun}_${randomNumber}`;
+
+  // Append domain
+  return `${alias.toLowerCase()}`;
 }

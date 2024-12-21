@@ -48,7 +48,14 @@ const swagger_1 = require("./swagger");
 Object.defineProperty(exports, "swagger", { enumerable: true, get: function () { return swagger_1.swagger; } });
 const user_auth_1 = require("./auth/user.auth");
 Object.defineProperty(exports, "onUserCreated", { enumerable: true, get: function () { return user_auth_1.onUserCreated; } });
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
+const corsOptions = {
+    origin: '*', // Allows all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed HTTP methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+};
+app.use((0, cors_1.default)(corsOptions));
 app.use(express_1.default.json());
 app.use('/api', api_routes_1.apiRoutes);
 exports.api = functions.https.onRequest(app);

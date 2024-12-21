@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Mail, Shield, Settings, LogOut, Plus, Inbox, Bell, CreditCard, HelpCircle, Ban } from 'lucide-react';
-import { handleSignOut } from './Header';
+import { useAliasStore } from '../../store/alias/alias.store';
 
 interface SidebarProps {
   onNewAlias: () => void;
@@ -20,18 +20,15 @@ const menuItems = [
 ];
 
 export default function Sidebar({ onNewAlias, currentView, onViewChange, aliases, isOpen, onClose }: SidebarProps) {
+  const aliasCount = useAliasStore((state) => state.aliasCount);
   const navigation = useMemo(() => [
     { id: 'inbox', name: 'Inbox', icon: Inbox, count: 12 },
-    { id: 'aliases', name: 'Aliases', icon: Mail, count: aliases.length },
+    { id: 'aliases', name: 'Aliases', icon: Mail, count: aliasCount },
     { id: 'spam', name: 'Spam', icon: Shield, count: 2 },
     { id: 'blocked', name: 'Blocked', icon: Ban, count: 0 }
-  ], [aliases]);
+  ], [aliasCount]);
 
   const handleViewChange = (view: string) => {
-    if(view === 'logout') {
-      handleSignOut()
-      return
-    }
     onViewChange(view);
     onClose();
   };
@@ -45,10 +42,9 @@ export default function Sidebar({ onNewAlias, currentView, onViewChange, aliases
       />
       <div
         className={`fixed lg:static inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 flex-shrink-0 
-                 flex flex-col border-r border-gray-200 dark:border-gray-700 transform transition-transform 
-                 lg:translate-x-0 z-50 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                 flex flex-col lg:translate-x-0 z-50 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-      <div className="p-4">
+      <div className="flex-shrink-0 p-4">
         <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 
                        text-white rounded-lg transition-colors"
                 onClick={onNewAlias}>
@@ -57,7 +53,7 @@ export default function Sidebar({ onNewAlias, currentView, onViewChange, aliases
         </button>
       </div>
       
-      <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-2 space-y-1 overflow-y-auto min-h-0">
         {navigation.map((item) => (
           <button
             key={item.id}
@@ -80,7 +76,7 @@ export default function Sidebar({ onNewAlias, currentView, onViewChange, aliases
         ))}
       </nav>
 
-      <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex-shrink-0 p-2 mt-auto border-t border-gray-200 dark:border-gray-700">
         {menuItems.map((item) => (
           <button
             key={item.id}
