@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Shield, Lock, Sun, Moon, Mail, Inbox, Sparkles, ShieldCheck, ArrowRightCircle, Send, Forward, ArrowRightLeft } from 'lucide-react';
 import Button from './ui/Button';
+import TempInbox from './TempInbox';
 import LoginModal from './LoginModal';
 
 interface HeroProps {
@@ -255,6 +256,14 @@ export default function Hero({ onLogin }: HeroProps) {
             </div>
           </motion.div>
         </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.8 }}
+          className="w-full"
+        >
+          <TempInbox />
+        </motion.div>
       </div>
     </div>
   );
